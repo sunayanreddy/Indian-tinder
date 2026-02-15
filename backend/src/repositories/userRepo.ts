@@ -14,8 +14,8 @@ const userSchema = new mongoose.Schema<User>(
       enum: ['man', 'woman', 'non_binary', 'other', 'prefer_not_say'],
       required: true
     },
-    bio: { type: String, required: true },
-    location: { type: String, required: true },
+    bio: { type: String, required: false, default: '' },
+    location: { type: String, required: false, default: '' },
     interests: [{ type: String, required: true }],
     avatarKey: { type: String, required: true },
     privatePhotos: [{ type: String, required: true }],
