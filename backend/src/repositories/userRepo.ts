@@ -105,7 +105,9 @@ class UserRepo {
   }
 
   public getMatchesForUser(userId: string): Match[] {
-    return this.store.matches.filter(match => match.userIds.includes(userId));
+    return this.store.matches.filter(
+      match => match.userIds[0] === userId || match.userIds[1] === userId
+    );
   }
 
   public addMessage(message: ChatMessage): ChatMessage {
