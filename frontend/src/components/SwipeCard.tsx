@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { User } from '../types';
 import AvatarBadge from './AvatarBadge';
 
@@ -30,6 +31,9 @@ const SwipeCard: React.FC<SwipeCardProps> = ({ user, onLike, onPass }) => {
             </span>
           ))}
         </div>
+        <Link className="btn btn-ghost" to={`/profile/${user.id}`}>
+          View Profile
+        </Link>
         <div className="action-row">
           <button className="btn btn-pass" onClick={onPass}>
             Pass

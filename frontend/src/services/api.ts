@@ -4,9 +4,11 @@ import {
   ChatMessage,
   Gender,
   MatchSummary,
+  MyProfileDetails,
   SwipeResponse,
   TypingEvent,
-  User
+  User,
+  ViewerProfileDetails
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
@@ -104,6 +106,16 @@ export const loginWithGoogle = async (idToken: string): Promise<AuthResponse> =>
 
 export const getProfile = async (): Promise<User> => {
   const response = await client.get<User>('/users/me');
+  return response.data;
+};
+
+export const getMyProfileDetails = async (): Promise<MyProfileDetails> => {
+  const response = await client.get<MyProfileDetails>('/users/me/details');
+  return response.data;
+};
+
+export const getUserProfileById = async (targetUserId: string): Promise<ViewerProfileDetails> => {
+  const response = await client.get<ViewerProfileDetails>(`/users/${targetUserId}`);
   return response.data;
 };
 

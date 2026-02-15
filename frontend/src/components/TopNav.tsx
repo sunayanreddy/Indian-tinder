@@ -18,6 +18,9 @@ const TopNav: React.FC<TopNavProps> = ({ onLogout }) => {
         <Link className={location.pathname === '/matches' ? 'active-link' : ''} to="/matches">
           Matches
         </Link>
+        <Link className={location.pathname === '/profile' ? 'active-link' : ''} to="/profile">
+          Profile
+        </Link>
       </nav>
       <button className="btn btn-ghost" onClick={onLogout}>
         Logout
