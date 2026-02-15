@@ -2,6 +2,9 @@
   "name": "indian-tinder-app-frontend",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -18,7 +21,8 @@
   "devDependencies": {
     "typescript": "^4.1.2",
     "@types/react": "^17.0.0",
-    "@types/react-dom": "^17.0.0"
+    "@types/react-dom": "^17.0.0",
+    "@types/minimatch": "5.1.2"
   },
   "browserslist": {
     "production": [
