@@ -28,13 +28,21 @@ client.interceptors.request.use(config => {
 });
 
 const getErrorMessage = (error: any, fallback: string): string => {
-  const serverMessage = error?.response?.data?.message;
+  const responseData = error?.response?.data;
+  const serverMessage =
+    (responseData && typeof responseData.message === 'string' && responseData.message) ||
+    (responseData && typeof responseData.error === 'string' && responseData.error) ||
+    (typeof responseData === 'string' ? responseData : '');
   if (typeof serverMessage === 'string' && serverMessage.trim()) {
     return serverMessage;
   }
 
   if (error?.message === 'Network Error') {
     return 'Unable to reach server. Please check your connection and try again.';
+  }
+
+  if (error?.response?.status === 400) {
+    return 'Invalid input. Please check your details and try again.';
   }
 
   return fallback;
