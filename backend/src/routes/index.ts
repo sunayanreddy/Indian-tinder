@@ -11,9 +11,9 @@ router.get('/health', (_req: any, res: any) => {
   res.status(200).json({ status: 'ok' });
 });
 
-router.post('/auth/register', (req: any, res: any) => {
+router.post('/auth/register', async (req: any, res: any) => {
   try {
-    const result = service.register(req.body);
+    const result = await service.register(req.body);
     res.status(201).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -21,9 +21,9 @@ router.post('/auth/register', (req: any, res: any) => {
   }
 });
 
-router.post('/auth/login', (req: any, res: any) => {
+router.post('/auth/login', async (req: any, res: any) => {
   try {
-    const result = service.login(req.body);
+    const result = await service.login(req.body);
     res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -52,9 +52,9 @@ router.get('/events', (req: any, res: any) => {
 
 router.use(requireAuth);
 
-router.get('/users/me', (req: any, res: any) => {
+router.get('/users/me', async (req: any, res: any) => {
   try {
-    const profile = service.getUserProfile(req.userId);
+    const profile = await service.getUserProfile(req.userId);
     res.status(200).json(profile);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -62,9 +62,9 @@ router.get('/users/me', (req: any, res: any) => {
   }
 });
 
-router.get('/users/discover', (req: any, res: any) => {
+router.get('/users/discover', async (req: any, res: any) => {
   try {
-    const users = service.discover(req.userId);
+    const users = await service.discover(req.userId);
     res.status(200).json(users);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -72,16 +72,16 @@ router.get('/users/discover', (req: any, res: any) => {
   }
 });
 
-router.post('/swipes', (req: any, res: any) => {
+router.post('/swipes', async (req: any, res: any) => {
   try {
     const { targetUserId, action } = req.body;
-    const result = service.swipe({ userId: req.userId, targetUserId, action });
+    const result = await service.swipe({ userId: req.userId, targetUserId, action });
 
     if (result.matched && result.match && result.matchedUserId) {
       realtime.emitToUser(req.userId, { type: 'match', payload: result.match });
-      const reciprocalMatch = service
-        .getMatches(result.matchedUserId)
-        .find(match => match.matchId === result.match?.matchId);
+      const reciprocalMatch = (await service.getMatches(result.matchedUserId)).find(
+        match => match.matchId === result.match?.matchId
+      );
       if (reciprocalMatch) {
         realtime.emitToUser(result.matchedUserId, {
           type: 'match',
@@ -97,9 +97,9 @@ router.post('/swipes', (req: any, res: any) => {
   }
 });
 
-router.get('/matches', (req: any, res: any) => {
+router.get('/matches', async (req: any, res: any) => {
   try {
-    const result = service.getMatches(req.userId);
+    const result = await service.getMatches(req.userId);
     res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -107,10 +107,10 @@ router.get('/matches', (req: any, res: any) => {
   }
 });
 
-router.get('/messages', (req: any, res: any) => {
+router.get('/messages', async (req: any, res: any) => {
   try {
     const matchUserId = String(req.query.matchUserId || '');
-    const result = service.getConversation(req.userId, matchUserId);
+    const result = await service.getConversation(req.userId, matchUserId);
     res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -118,10 +118,10 @@ router.get('/messages', (req: any, res: any) => {
   }
 });
 
-router.post('/messages', (req: any, res: any) => {
+router.post('/messages', async (req: any, res: any) => {
   try {
     const { toUserId, text } = req.body;
-    const result = service.sendMessage({ fromUserId: req.userId, toUserId, text });
+    const result = await service.sendMessage({ fromUserId: req.userId, toUserId, text });
     realtime.emitToUser(toUserId, { type: 'message', payload: result });
     realtime.emitToUser(req.userId, { type: 'message', payload: result });
     res.status(201).json(result);

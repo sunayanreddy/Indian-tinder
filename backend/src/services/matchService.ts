@@ -45,14 +45,20 @@ interface AuthResult {
 
 class MatchService {
   private userRepo: UserRepo;
+  private seeded = false;
 
   constructor() {
     this.userRepo = new UserRepo();
-    this.seedUsersIfEmpty();
   }
 
-  private seedUsersIfEmpty(): void {
-    if (this.userRepo.getAllUsers().length > 0) {
+  private async seedUsersIfEmpty(): Promise<void> {
+    if (this.seeded) {
+      return;
+    }
+
+    const existingUsers = await this.userRepo.getAllUsers();
+    if (existingUsers.length > 0) {
+      this.seeded = true;
       return;
     }
 
@@ -103,7 +109,15 @@ class MatchService {
       }
     ];
 
-    users.forEach(user => this.createUser(user));
+    for (const user of users) {
+      await this.createUser(user);
+    }
+
+    this.seeded = true;
+  }
+
+  private async ensureReady(): Promise<void> {
+    await this.seedUsersIfEmpty();
   }
 
   private id(prefix: string): string {
@@ -126,7 +140,7 @@ class MatchService {
     };
   }
 
-  private createUser(input: RegisterInput): User {
+  private async createUser(input: RegisterInput): Promise<User> {
     const user: User = {
       id: this.id('user'),
       name: input.name.trim(),
@@ -145,7 +159,9 @@ class MatchService {
     return this.userRepo.createUser(user);
   }
 
-  public register(input: RegisterInput): AuthResult {
+  public async register(input: RegisterInput): Promise<AuthResult> {
+    await this.ensureReady();
+
     if (!input.email || !input.password || !input.name) {
       throw new Error('Name, email and password are required');
     }
@@ -154,20 +170,22 @@ class MatchService {
       throw new Error('Password should be at least 6 characters');
     }
 
-    const existing = this.userRepo.getUserByEmail(input.email);
+    const existing = await this.userRepo.getUserByEmail(input.email);
     if (existing) {
       throw new Error('Email already exists');
     }
 
-    const user = this.createUser(input);
+    const user = await this.createUser(input);
     return {
       token: issueToken(user.id),
       user: this.sanitizeUser(user)
     };
   }
 
-  public login(input: LoginInput): AuthResult {
-    const user = this.userRepo.getUserByEmail(input.email);
+  public async login(input: LoginInput): Promise<AuthResult> {
+    await this.ensureReady();
+
+    const user = await this.userRepo.getUserByEmail(input.email);
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -183,8 +201,10 @@ class MatchService {
     };
   }
 
-  public getUserProfile(userId: string): PublicUser {
-    const user = this.userRepo.getUserById(userId);
+  public async getUserProfile(userId: string): Promise<PublicUser> {
+    await this.ensureReady();
+
+    const user = await this.userRepo.getUserById(userId);
     if (!user) {
       throw new Error('User not found');
     }
@@ -192,32 +212,45 @@ class MatchService {
     return this.sanitizeUser(user);
   }
 
-  public discover(userId: string): PublicUser[] {
-    const user = this.userRepo.getUserById(userId);
+  public async discover(userId: string): Promise<PublicUser[]> {
+    await this.ensureReady();
+
+    const user = await this.userRepo.getUserById(userId);
     if (!user) {
       throw new Error('User not found');
     }
 
-    return this.userRepo
-      .getAllUsers()
-      .filter(candidate => candidate.id !== userId)
-      .filter(candidate => !this.userRepo.hasUserSwiped(userId, candidate.id))
-      .map(candidate => this.sanitizeUser(candidate));
+    const allUsers = await this.userRepo.getAllUsers();
+    const result: PublicUser[] = [];
+
+    for (const candidate of allUsers) {
+      if (candidate.id === userId) {
+        continue;
+      }
+      const hasSwiped = await this.userRepo.hasUserSwiped(userId, candidate.id);
+      if (!hasSwiped) {
+        result.push(this.sanitizeUser(candidate));
+      }
+    }
+
+    return result;
   }
 
-  public swipe(input: SwipeInput): { matched: boolean; match?: MatchSummary; matchedUserId?: string } {
+  public async swipe(input: SwipeInput): Promise<{ matched: boolean; match?: MatchSummary; matchedUserId?: string }> {
+    await this.ensureReady();
+
     const { userId, targetUserId, action } = input;
     if (userId === targetUserId) {
       throw new Error('You cannot swipe yourself');
     }
 
-    const user = this.userRepo.getUserById(userId);
-    const target = this.userRepo.getUserById(targetUserId);
+    const user = await this.userRepo.getUserById(userId);
+    const target = await this.userRepo.getUserById(targetUserId);
     if (!user || !target) {
       throw new Error('User not found');
     }
 
-    this.userRepo.upsertSwipe({
+    await this.userRepo.upsertSwipe({
       fromUserId: userId,
       toUserId: targetUserId,
       action,
@@ -228,16 +261,16 @@ class MatchService {
       return { matched: false };
     }
 
-    const reciprocalLike = this.userRepo.getSwipe(targetUserId, userId);
+    const reciprocalLike = await this.userRepo.getSwipe(targetUserId, userId);
     const isMutualLike = reciprocalLike?.action === 'like';
 
     if (!isMutualLike) {
       return { matched: false };
     }
 
-    let match = this.userRepo.getMatchByUsers(userId, targetUserId);
+    let match = await this.userRepo.getMatchByUsers(userId, targetUserId);
     if (!match) {
-      match = this.userRepo.createMatch({
+      match = await this.userRepo.createMatch({
         id: this.id('match'),
         userIds: [userId, targetUserId],
         createdAt: new Date().toISOString()
@@ -246,23 +279,23 @@ class MatchService {
 
     return {
       matched: true,
-      match: this.buildMatchSummary(match, userId),
+      match: await this.buildMatchSummary(match, userId),
       matchedUserId: targetUserId
     };
   }
 
-  private buildMatchSummary(match: Match, userId: string): MatchSummary {
+  private async buildMatchSummary(match: Match, userId: string): Promise<MatchSummary> {
     const otherUserId = match.userIds.find(id => id !== userId);
     if (!otherUserId) {
       throw new Error('Invalid match data');
     }
 
-    const otherUser = this.userRepo.getUserById(otherUserId);
+    const otherUser = await this.userRepo.getUserById(otherUserId);
     if (!otherUser) {
       throw new Error('Match user missing');
     }
 
-    const lastMessage = this.userRepo.getLastMessageForMatch(match.id);
+    const lastMessage = await this.userRepo.getLastMessageForMatch(match.id);
 
     return {
       matchId: match.id,
@@ -278,28 +311,32 @@ class MatchService {
     };
   }
 
-  public getMatches(userId: string): MatchSummary[] {
-    const user = this.userRepo.getUserById(userId);
+  public async getMatches(userId: string): Promise<MatchSummary[]> {
+    await this.ensureReady();
+
+    const user = await this.userRepo.getUserById(userId);
     if (!user) {
       throw new Error('User not found');
     }
 
-    return this.userRepo
-      .getMatchesForUser(userId)
-      .map(match => this.buildMatchSummary(match, userId))
-      .sort((a, b) => {
-        const aTime = a.lastMessage?.createdAt || a.connectedAt;
-        const bTime = b.lastMessage?.createdAt || b.connectedAt;
-        return bTime.localeCompare(aTime);
-      });
+    const matches = await this.userRepo.getMatchesForUser(userId);
+    const summaries = await Promise.all(matches.map(match => this.buildMatchSummary(match, userId)));
+
+    return summaries.sort((a, b) => {
+      const aTime = a.lastMessage?.createdAt || a.connectedAt;
+      const bTime = b.lastMessage?.createdAt || b.connectedAt;
+      return bTime.localeCompare(aTime);
+    });
   }
 
-  public sendMessage(input: SendMessageInput): ChatMessage {
+  public async sendMessage(input: SendMessageInput): Promise<ChatMessage> {
+    await this.ensureReady();
+
     if (!input.text.trim()) {
       throw new Error('Message cannot be empty');
     }
 
-    const match = this.userRepo.getMatchByUsers(input.fromUserId, input.toUserId);
+    const match = await this.userRepo.getMatchByUsers(input.fromUserId, input.toUserId);
     if (!match) {
       throw new Error('You can only message users you matched with');
     }
@@ -314,8 +351,10 @@ class MatchService {
     });
   }
 
-  public getConversation(userId: string, matchUserId: string): ChatMessage[] {
-    const match = this.userRepo.getMatchByUsers(userId, matchUserId);
+  public async getConversation(userId: string, matchUserId: string): Promise<ChatMessage[]> {
+    await this.ensureReady();
+
+    const match = await this.userRepo.getMatchByUsers(userId, matchUserId);
     if (!match) {
       throw new Error('Match not found');
     }

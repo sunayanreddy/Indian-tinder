@@ -1,131 +1,131 @@
-import fs from 'fs';
-import path from 'path';
-import { ChatMessage, DataStore, Match, Swipe, User } from '../models/user';
+import mongoose from 'mongoose';
+import { ChatMessage, Match, Swipe, User } from '../models/user';
 
-const DEFAULT_DATA_FILE_PATH = path.resolve(__dirname, '../../data/store.json');
-const DATA_FILE_PATH = process.env.DATA_FILE_PATH || DEFAULT_DATA_FILE_PATH;
+const userSchema = new mongoose.Schema<User>(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    passwordHash: { type: String, required: true },
+    age: { type: Number, required: true },
+    bio: { type: String, required: true },
+    location: { type: String, required: true },
+    interests: [{ type: String, required: true }],
+    avatarUrl: { type: String, required: true },
+    createdAt: { type: String, required: true }
+  },
+  { versionKey: false }
+);
 
-const emptyStore = (): DataStore => ({
-  users: [],
-  swipes: [],
-  matches: [],
-  messages: []
-});
+const swipeSchema = new mongoose.Schema<Swipe>(
+  {
+    fromUserId: { type: String, required: true },
+    toUserId: { type: String, required: true },
+    action: { type: String, enum: ['like', 'pass'], required: true },
+    createdAt: { type: String, required: true }
+  },
+  { versionKey: false }
+);
+
+swipeSchema.index({ fromUserId: 1, toUserId: 1 }, { unique: true });
+
+const matchSchema = new mongoose.Schema<Match>(
+  {
+    id: { type: String, required: true, unique: true },
+    userIds: [{ type: String, required: true }],
+    createdAt: { type: String, required: true }
+  },
+  { versionKey: false }
+);
+
+const messageSchema = new mongoose.Schema<ChatMessage>(
+  {
+    id: { type: String, required: true, unique: true },
+    matchId: { type: String, required: true },
+    fromUserId: { type: String, required: true },
+    toUserId: { type: String, required: true },
+    text: { type: String, required: true },
+    createdAt: { type: String, required: true }
+  },
+  { versionKey: false }
+);
+
+const UserModel = mongoose.models.UserModel || mongoose.model<User>('UserModel', userSchema);
+const SwipeModel = mongoose.models.SwipeModel || mongoose.model<Swipe>('SwipeModel', swipeSchema);
+const MatchModel = mongoose.models.MatchModel || mongoose.model<Match>('MatchModel', matchSchema);
+const MessageModel =
+  mongoose.models.MessageModel || mongoose.model<ChatMessage>('MessageModel', messageSchema);
 
 class UserRepo {
-  private store: DataStore;
-
-  constructor() {
-    this.store = this.readStore();
-  }
-
-  private readStore(): DataStore {
-    const dir = path.dirname(DATA_FILE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    if (!fs.existsSync(DATA_FILE_PATH)) {
-      const initial = emptyStore();
-      fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(initial, null, 2), 'utf8');
-      return initial;
-    }
-
-    try {
-      const raw = fs.readFileSync(DATA_FILE_PATH, 'utf8');
-      const parsed = JSON.parse(raw) as DataStore;
-      return {
-        users: parsed.users || [],
-        swipes: parsed.swipes || [],
-        matches: parsed.matches || [],
-        messages: parsed.messages || []
-      };
-    } catch (_error) {
-      const fallback = emptyStore();
-      fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(fallback, null, 2), 'utf8');
-      return fallback;
-    }
-  }
-
-  private persist(): void {
-    fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(this.store, null, 2), 'utf8');
-  }
-
-  public createUser(user: User): User {
-    this.store.users.push(user);
-    this.persist();
+  public async createUser(user: User): Promise<User> {
+    await UserModel.create(user);
     return user;
   }
 
-  public getAllUsers(): User[] {
-    return this.store.users;
+  public async getAllUsers(): Promise<User[]> {
+    return UserModel.find().lean<User[]>().exec();
   }
 
-  public getUserById(id: string): User | undefined {
-    return this.store.users.find(user => user.id === id);
+  public async getUserById(id: string): Promise<User | undefined> {
+    const user = await UserModel.findOne({ id }).lean<User>().exec();
+    return user || undefined;
   }
 
-  public getUserByEmail(email: string): User | undefined {
-    return this.store.users.find(user => user.email.toLowerCase() === email.toLowerCase());
+  public async getUserByEmail(email: string): Promise<User | undefined> {
+    const user = await UserModel.findOne({ email: email.toLowerCase() }).lean<User>().exec();
+    return user || undefined;
   }
 
-  public upsertSwipe(swipe: Swipe): Swipe {
-    const existingIndex = this.store.swipes.findIndex(
-      row => row.fromUserId === swipe.fromUserId && row.toUserId === swipe.toUserId
-    );
-
-    if (existingIndex === -1) {
-      this.store.swipes.push(swipe);
-    } else {
-      this.store.swipes[existingIndex] = swipe;
-    }
-
-    this.persist();
+  public async upsertSwipe(swipe: Swipe): Promise<Swipe> {
+    await SwipeModel.findOneAndUpdate(
+      { fromUserId: swipe.fromUserId, toUserId: swipe.toUserId },
+      swipe,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).exec();
     return swipe;
   }
 
-  public getSwipe(fromUserId: string, toUserId: string): Swipe | undefined {
-    return this.store.swipes.find(row => row.fromUserId === fromUserId && row.toUserId === toUserId);
+  public async getSwipe(fromUserId: string, toUserId: string): Promise<Swipe | undefined> {
+    const swipe = await SwipeModel.findOne({ fromUserId, toUserId }).lean<Swipe>().exec();
+    return swipe || undefined;
   }
 
-  public hasUserSwiped(fromUserId: string, toUserId: string): boolean {
-    return Boolean(this.getSwipe(fromUserId, toUserId));
+  public async hasUserSwiped(fromUserId: string, toUserId: string): Promise<boolean> {
+    const swipe = await this.getSwipe(fromUserId, toUserId);
+    return Boolean(swipe);
   }
 
-  public createMatch(match: Match): Match {
-    this.store.matches.push(match);
-    this.persist();
+  public async createMatch(match: Match): Promise<Match> {
+    await MatchModel.create(match);
     return match;
   }
 
-  public getMatchByUsers(userA: string, userB: string): Match | undefined {
-    return this.store.matches.find(match => {
-      const set = new Set(match.userIds);
-      return set.has(userA) && set.has(userB);
-    });
+  public async getMatchByUsers(userA: string, userB: string): Promise<Match | undefined> {
+    const match = await MatchModel.findOne({ userIds: { $all: [userA, userB] } })
+      .lean<Match>()
+      .exec();
+    return match || undefined;
   }
 
-  public getMatchesForUser(userId: string): Match[] {
-    return this.store.matches.filter(
-      match => match.userIds[0] === userId || match.userIds[1] === userId
-    );
+  public async getMatchesForUser(userId: string): Promise<Match[]> {
+    return MatchModel.find({ userIds: userId }).lean<Match[]>().exec();
   }
 
-  public addMessage(message: ChatMessage): ChatMessage {
-    this.store.messages.push(message);
-    this.persist();
+  public async addMessage(message: ChatMessage): Promise<ChatMessage> {
+    await MessageModel.create(message);
     return message;
   }
 
-  public getMessagesForMatch(matchId: string): ChatMessage[] {
-    return this.store.messages
-      .filter(message => message.matchId === matchId)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  public async getMessagesForMatch(matchId: string): Promise<ChatMessage[]> {
+    return MessageModel.find({ matchId })
+      .sort({ createdAt: 1 })
+      .lean<ChatMessage[]>()
+      .exec();
   }
 
-  public getLastMessageForMatch(matchId: string): ChatMessage | undefined {
-    const matchMessages = this.getMessagesForMatch(matchId);
-    return matchMessages[matchMessages.length - 1];
+  public async getLastMessageForMatch(matchId: string): Promise<ChatMessage | undefined> {
+    const last = await MessageModel.findOne({ matchId }).sort({ createdAt: -1 }).lean<ChatMessage>().exec();
+    return last || undefined;
   }
 }
 
