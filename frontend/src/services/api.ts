@@ -3,8 +3,11 @@ import {
   AuthResponse,
   ChatMessage,
   Gender,
+  LifestyleHabit,
+  LookingFor,
   MatchSummary,
   MyProfileDetails,
+  RelationshipGoal,
   SwipeResponse,
   TypingEvent,
   User,
@@ -86,6 +89,15 @@ export interface ProfileInput {
   location: string;
   interests: string[];
   avatarKey: string;
+  lookingFor: LookingFor;
+  relationshipGoal: RelationshipGoal;
+  occupation: string;
+  education: string;
+  heightCm: number;
+  drinking: LifestyleHabit;
+  smoking: LifestyleHabit;
+  religion: string;
+  languages: string[];
   privatePhotos: string[];
 }
 

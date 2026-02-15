@@ -175,6 +175,10 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
         </div>
       )}
 
+      <div className="chat-expiry-notice">
+        Chats auto-delete after 24 hours to protect your privacy.
+      </div>
+
       {loading && <p>Loading conversation...</p>}
       {error && <p className="error-text">{error}</p>}
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import BrandLogo from '../components/BrandLogo';
 import {
   getApiErrorMessage,
   login,
@@ -125,65 +126,80 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
 
   return (
     <main className="auth-layout">
-      <section className="auth-panel">
-        <h1>Trust-first Dating</h1>
-        <p>Use Gmail/Google or email login. Private photos unlock only with consent after meaningful chat.</p>
-        <div className="auth-toggle">
-          <button
-            className={`btn ${mode === 'login' ? 'btn-like' : 'btn-ghost'}`}
-            type="button"
-            onClick={() => setMode('login')}
-          >
-            Login
-          </button>
-          <button
-            className={`btn ${mode === 'register' ? 'btn-like' : 'btn-ghost'}`}
-            type="button"
-            onClick={() => setMode('register')}
-          >
-            Register
-          </button>
-        </div>
+      <section className="auth-shell">
+        <aside className="auth-side">
+          <BrandLogo />
+          <h2>Secure dating built on trust, not pressure</h2>
+          <p>
+            Start with private profiles, match with people who share your intent, and choose when to unlock photos.
+          </p>
+          <ul className="auth-benefits">
+            <li>Google and email sign-in</li>
+            <li>Intent and compatibility-first profile flow</li>
+            <li>Photo access only by explicit consent</li>
+          </ul>
+        </aside>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === 'register' && (
+        <div className="auth-panel">
+          <h1>{mode === 'login' ? 'Welcome Back' : 'Create Your Account'}</h1>
+          <p>Use Gmail/Google or email login. Private photos unlock only with consent after meaningful chat.</p>
+          <div className="auth-toggle">
+            <button
+              className={`btn ${mode === 'login' ? 'btn-like' : 'btn-ghost'}`}
+              type="button"
+              onClick={() => setMode('login')}
+            >
+              Login
+            </button>
+            <button
+              className={`btn ${mode === 'register' ? 'btn-like' : 'btn-ghost'}`}
+              type="button"
+              onClick={() => setMode('register')}
+            >
+              Register
+            </button>
+          </div>
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            {mode === 'register' && (
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                type="text"
+                placeholder="Full name"
+                required
+              />
+            )}
+
             <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              type="text"
-              placeholder="Full name"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              type="email"
+              placeholder="Email"
               required
             />
-          )}
+            <input
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              type="password"
+              placeholder="Password"
+              required
+            />
 
-          <input
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            type="email"
-            placeholder="Email"
-            required
-          />
-          <input
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            type="password"
-            placeholder="Password"
-            required
-          />
+            {error && <p className="error-text">{error}</p>}
 
-          {error && <p className="error-text">{error}</p>}
+            <button className="btn btn-like" type="submit" disabled={loading}>
+              {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
+            </button>
+          </form>
 
-          <button className="btn btn-like" type="submit" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
-          </button>
-        </form>
-
-        {googleClientId ? (
-          <div className="google-wrap">
-            <p className="muted">or continue with Google</p>
-            <div id="google-signin-button" />
-          </div>
-        ) : null}
+          {googleClientId ? (
+            <div className="google-wrap">
+              <p className="muted">or continue with Google</p>
+              <div id="google-signin-button" />
+            </div>
+          ) : null}
+        </div>
       </section>
     </main>
   );

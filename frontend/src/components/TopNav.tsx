@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import BrandLogo from './BrandLogo';
 
 interface TopNavProps {
   onLogout: () => void;
@@ -10,7 +11,9 @@ const TopNav: React.FC<TopNavProps> = ({ onLogout }) => {
 
   return (
     <header className="top-nav">
-      <div className="brand">Indian Tinder Pro</div>
+      <div className="brand">
+        <BrandLogo compact />
+      </div>
       <nav>
         <Link className={location.pathname === '/discover' ? 'active-link' : ''} to="/discover">
           Discover

@@ -24,6 +24,12 @@ const SwipeCard: React.FC<SwipeCardProps> = ({ user, onLike, onPass }) => {
           {user.location} · {user.gender.replace('_', ' ')}
         </p>
         <p>{user.bio || 'No bio yet.'}</p>
+        <p className="muted">
+          {user.occupation} · {user.education}
+        </p>
+        <p className="muted">
+          Looking for {user.lookingFor.replace('_', ' ')} · Goal: {user.relationshipGoal.replace('_', ' ')}
+        </p>
         <div className="tag-row">
           {user.interests.map(interest => (
             <span className="tag" key={interest}>

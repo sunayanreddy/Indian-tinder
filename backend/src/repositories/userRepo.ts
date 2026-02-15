@@ -18,6 +18,35 @@ const userSchema = new mongoose.Schema<User>(
     location: { type: String, required: false, default: '' },
     interests: [{ type: String, required: true }],
     avatarKey: { type: String, required: true },
+    lookingFor: {
+      type: String,
+      enum: ['man', 'woman', 'non_binary', 'everyone', 'prefer_not_say'],
+      required: true,
+      default: 'prefer_not_say'
+    },
+    relationshipGoal: {
+      type: String,
+      enum: ['long_term', 'short_term', 'marriage', 'friendship'],
+      required: true,
+      default: 'long_term'
+    },
+    occupation: { type: String, required: false, default: '' },
+    education: { type: String, required: false, default: '' },
+    heightCm: { type: Number, required: true, default: 170 },
+    drinking: {
+      type: String,
+      enum: ['never', 'occasionally', 'socially', 'regularly', 'prefer_not_say'],
+      required: true,
+      default: 'prefer_not_say'
+    },
+    smoking: {
+      type: String,
+      enum: ['never', 'occasionally', 'socially', 'regularly', 'prefer_not_say'],
+      required: true,
+      default: 'prefer_not_say'
+    },
+    religion: { type: String, required: false, default: '' },
+    languages: [{ type: String, required: true }],
     privatePhotos: [{ type: String, required: true }],
     onboardingCompleted: { type: Boolean, required: true, default: false },
     createdAt: { type: String, required: true }

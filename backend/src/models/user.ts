@@ -1,6 +1,14 @@
 export type SwipeAction = 'like' | 'pass';
 
 export type Gender = 'man' | 'woman' | 'non_binary' | 'other' | 'prefer_not_say';
+export type LookingFor =
+  | 'man'
+  | 'woman'
+  | 'non_binary'
+  | 'everyone'
+  | 'prefer_not_say';
+export type RelationshipGoal = 'long_term' | 'short_term' | 'marriage' | 'friendship';
+export type LifestyleHabit = 'never' | 'occasionally' | 'socially' | 'regularly' | 'prefer_not_say';
 
 export interface User {
   id: string;
@@ -14,6 +22,15 @@ export interface User {
   location: string;
   interests: string[];
   avatarKey: string;
+  lookingFor: LookingFor;
+  relationshipGoal: RelationshipGoal;
+  occupation: string;
+  education: string;
+  heightCm: number;
+  drinking: LifestyleHabit;
+  smoking: LifestyleHabit;
+  religion: string;
+  languages: string[];
   privatePhotos: string[];
   onboardingCompleted: boolean;
   createdAt: string;
@@ -28,6 +45,15 @@ export interface PublicUser {
   location: string;
   interests: string[];
   avatarKey: string;
+  lookingFor: LookingFor;
+  relationshipGoal: RelationshipGoal;
+  occupation: string;
+  education: string;
+  heightCm: number;
+  drinking: LifestyleHabit;
+  smoking: LifestyleHabit;
+  religion: string;
+  languages: string[];
   onboardingCompleted: boolean;
 }
 
