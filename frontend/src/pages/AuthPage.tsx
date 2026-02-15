@@ -6,12 +6,6 @@ interface AuthPageProps {
   onAuthenticated: (token: string, user: User) => void;
 }
 
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
-
 const defaultRegisterState: RegisterInput = {
   name: '',
   email: '',
@@ -42,8 +36,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
       script.defer = true;
       script.id = scriptId;
       script.onload = () => {
-        if (window.google) {
-          window.google.accounts.id.initialize({
+        const googleApi = (window as any).google;
+        if (googleApi) {
+          googleApi.accounts.id.initialize({
             client_id: googleClientId,
             callback: async (response: any) => {
               try {
@@ -57,7 +52,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
           const container = document.getElementById('google-signin-button');
           if (container) {
             container.innerHTML = '';
-            window.google.accounts.id.renderButton(container, {
+            googleApi.accounts.id.renderButton(container, {
               theme: 'outline',
               size: 'large',
               shape: 'pill',

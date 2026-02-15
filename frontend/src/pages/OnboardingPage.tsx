@@ -7,10 +7,25 @@ interface OnboardingPageProps {
   onComplete: (user: User) => void;
 }
 
+const normalizeGender = (value: string): Gender => {
+  switch (value) {
+    case 'man':
+      return 'man';
+    case 'woman':
+      return 'woman';
+    case 'non_binary':
+      return 'non_binary';
+    case 'other':
+      return 'other';
+    default:
+      return 'prefer_not_say';
+  }
+};
+
 const OnboardingPage: React.FC<OnboardingPageProps> = ({ user, onComplete }) => {
   const [name, setName] = useState(user.name || '');
   const [age, setAge] = useState(user.age || 21);
-  const [gender, setGender] = useState<Gender>(user.gender || 'prefer_not_say');
+  const [gender, setGender] = useState<string>(user.gender || 'prefer_not_say');
   const [bio, setBio] = useState(user.bio || '');
   const [location, setLocation] = useState(user.location || '');
   const [interests, setInterests] = useState((user.interests || []).join(', '));
@@ -28,7 +43,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ user, onComplete }) => 
       const updated = await updateProfile({
         name,
         age,
-        gender,
+        gender: normalizeGender(gender),
         bio,
         location,
         interests: interests
@@ -67,7 +82,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ user, onComplete }) => 
               placeholder="Age"
               required
             />
-            <select value={gender} onChange={e => setGender(e.target.value as Gender)}>
+            <select value={gender} onChange={e => setGender(e.target.value)}>
               <option value="man">Man</option>
               <option value="woman">Woman</option>
               <option value="non_binary">Non-binary</option>
