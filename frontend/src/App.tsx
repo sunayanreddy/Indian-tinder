@@ -4,6 +4,7 @@ import TopNav from './components/TopNav';
 import AuthPage from './pages/AuthPage';
 import ChatPage from './pages/ChatPage';
 import DiscoverPage from './pages/DiscoverPage';
+import HomePage from './pages/HomePage';
 import MatchesPage from './pages/MatchesPage';
 import OnboardingPage from './pages/OnboardingPage';
 import { getProfile, setAuthToken } from './services/api';
@@ -85,6 +86,10 @@ const App: React.FC = () => {
           )}
         </Route>
 
+        <Route path="/home">
+          {authenticated ? <Redirect to={needsOnboarding ? '/onboarding' : '/discover'} /> : <HomePage />}
+        </Route>
+
         <Route path="/onboarding">
           {authenticated && user ? (
             <OnboardingPage user={user} onComplete={onOnboardingComplete} />
@@ -130,7 +135,7 @@ const App: React.FC = () => {
         </Route>
 
         <Route path="/">
-          <Redirect to={authenticated ? (needsOnboarding ? '/onboarding' : '/discover') : '/auth'} />
+          <Redirect to={authenticated ? (needsOnboarding ? '/onboarding' : '/discover') : '/home'} />
         </Route>
       </Switch>
     </BrowserRouter>
