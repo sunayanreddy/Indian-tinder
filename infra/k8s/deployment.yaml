@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: indian-tinder-app
+  labels:
+    app: indian-tinder-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: indian-tinder-app
+  template:
+    metadata:
+      labels:
+        app: indian-tinder-app
+    spec:
+      containers:
+      - name: backend
+        image: your-backend-image:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: url
+      - name: frontend
+        image: your-frontend-image:latest
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred

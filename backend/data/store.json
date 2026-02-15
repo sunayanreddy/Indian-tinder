@@ -1,0 +1,118 @@
+{
+  "users": [
+    {
+      "id": "user_8i05l25x",
+      "name": "Aarav Malhotra",
+      "email": "aarav@example.com",
+      "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+      "age": 28,
+      "bio": "Product manager, runner, and forever chai loyalist.",
+      "location": "Bengaluru",
+      "interests": [
+        "travel",
+        "fitness",
+        "startup",
+        "music"
+      ],
+      "avatarUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80",
+      "createdAt": "2026-02-15T02:47:03.214Z"
+    },
+    {
+      "id": "user_93cahpvm",
+      "name": "Isha Kapoor",
+      "email": "isha@example.com",
+      "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+      "age": 26,
+      "bio": "Dancer, foodie, and fan of long late-night conversations.",
+      "location": "Mumbai",
+      "interests": [
+        "dance",
+        "music",
+        "food",
+        "travel"
+      ],
+      "avatarUrl": "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80",
+      "createdAt": "2026-02-15T02:47:03.215Z"
+    },
+    {
+      "id": "user_846gjhf0",
+      "name": "Rohan Bhat",
+      "email": "rohan@example.com",
+      "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+      "age": 30,
+      "bio": "Engineer, guitarist, and mountain weekend explorer.",
+      "location": "Hyderabad",
+      "interests": [
+        "tech",
+        "music",
+        "hiking",
+        "gaming"
+      ],
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+      "createdAt": "2026-02-15T02:47:03.215Z"
+    },
+    {
+      "id": "user_iqak8b4s",
+      "name": "Meera Nair",
+      "email": "meera@example.com",
+      "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+      "age": 27,
+      "bio": "Architect who loves books, beaches, and filter coffee.",
+      "location": "Chennai",
+      "interests": [
+        "books",
+        "design",
+        "travel",
+        "coffee"
+      ],
+      "avatarUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80",
+      "createdAt": "2026-02-15T02:47:03.215Z"
+    }
+  ],
+  "swipes": [
+    {
+      "fromUserId": "user_93cahpvm",
+      "toUserId": "user_8i05l25x",
+      "action": "like",
+      "createdAt": "2026-02-15T02:49:59.427Z"
+    },
+    {
+      "fromUserId": "user_93cahpvm",
+      "toUserId": "user_846gjhf0",
+      "action": "like",
+      "createdAt": "2026-02-15T02:48:47.999Z"
+    },
+    {
+      "fromUserId": "user_93cahpvm",
+      "toUserId": "user_iqak8b4s",
+      "action": "like",
+      "createdAt": "2026-02-15T02:48:48.428Z"
+    },
+    {
+      "fromUserId": "user_8i05l25x",
+      "toUserId": "user_93cahpvm",
+      "action": "like",
+      "createdAt": "2026-02-15T02:49:59.438Z"
+    }
+  ],
+  "matches": [
+    {
+      "id": "match_bbxoobmm",
+      "userIds": [
+        "user_8i05l25x",
+        "user_93cahpvm"
+      ],
+      "createdAt": "2026-02-15T02:49:59.438Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_vdf9x4b1",
+      "matchId": "match_bbxoobmm",
+      "fromUserId": "user_93cahpvm",
+      "toUserId": "user_8i05l25x",
+      "text": "Testing persisted realtime chat",
+      "createdAt": "2026-02-15T02:49:59.449Z"
+    }
+  ]
+}
