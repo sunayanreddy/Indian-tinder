@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { ChatMessage, DataStore, Match, Swipe, User } from '../models/user';
 
-const DATA_FILE_PATH = path.resolve(__dirname, '../../data/store.json');
+const DEFAULT_DATA_FILE_PATH = path.resolve(__dirname, '../../data/store.json');
+const DATA_FILE_PATH = process.env.DATA_FILE_PATH || DEFAULT_DATA_FILE_PATH;
 
 const emptyStore = (): DataStore => ({
   users: [],
