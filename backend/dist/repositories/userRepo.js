@@ -25,10 +25,39 @@ const userSchema = new mongoose_1.default.Schema({
         enum: ['man', 'woman', 'non_binary', 'other', 'prefer_not_say'],
         required: true
     },
-    bio: { type: String, required: true },
-    location: { type: String, required: true },
+    bio: { type: String, required: false, default: '' },
+    location: { type: String, required: false, default: '' },
     interests: [{ type: String, required: true }],
     avatarKey: { type: String, required: true },
+    lookingFor: {
+        type: String,
+        enum: ['man', 'woman', 'non_binary', 'everyone', 'prefer_not_say'],
+        required: true,
+        default: 'prefer_not_say'
+    },
+    relationshipGoal: {
+        type: String,
+        enum: ['long_term', 'short_term', 'marriage', 'friendship'],
+        required: true,
+        default: 'long_term'
+    },
+    occupation: { type: String, required: false, default: '' },
+    education: { type: String, required: false, default: '' },
+    heightCm: { type: Number, required: true, default: 170 },
+    drinking: {
+        type: String,
+        enum: ['never', 'occasionally', 'socially', 'regularly', 'prefer_not_say'],
+        required: true,
+        default: 'prefer_not_say'
+    },
+    smoking: {
+        type: String,
+        enum: ['never', 'occasionally', 'socially', 'regularly', 'prefer_not_say'],
+        required: true,
+        default: 'prefer_not_say'
+    },
+    religion: { type: String, required: false, default: '' },
+    languages: [{ type: String, required: true }],
     privatePhotos: [{ type: String, required: true }],
     onboardingCompleted: { type: Boolean, required: true, default: false },
     createdAt: { type: String, required: true }
@@ -64,6 +93,16 @@ const SwipeModel = mongoose_1.default.models.SwipeModel || mongoose_1.default.mo
 const MatchModel = mongoose_1.default.models.MatchModel || mongoose_1.default.model('MatchModel', matchSchema);
 const MessageModel = mongoose_1.default.models.MessageModel || mongoose_1.default.model('MessageModel', messageSchema);
 class UserRepo {
+    getCutoffIso() {
+        return new Date(Date.now() - UserRepo.CHAT_TTL_MS).toISOString();
+    }
+    purgeExpiredMessages() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield MessageModel.deleteMany({
+                createdAt: { $lt: this.getCutoffIso() }
+            }).exec();
+        });
+    }
     createUser(user) {
         return __awaiter(this, void 0, void 0, function* () {
             yield UserModel.create(user);
@@ -150,12 +189,14 @@ class UserRepo {
     }
     addMessage(message) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.purgeExpiredMessages();
             yield MessageModel.create(message);
             return message;
         });
     }
     getMessagesForMatch(matchId) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.purgeExpiredMessages();
             return MessageModel.find({ matchId })
                 .sort({ createdAt: 1 })
                 .lean()
@@ -164,14 +205,17 @@ class UserRepo {
     }
     getLastMessageForMatch(matchId) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.purgeExpiredMessages();
             const last = yield MessageModel.findOne({ matchId }).sort({ createdAt: -1 }).lean().exec();
             return last || undefined;
         });
     }
     getMessageCountForMatch(matchId) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.purgeExpiredMessages();
             return MessageModel.countDocuments({ matchId }).exec();
         });
     }
 }
+UserRepo.CHAT_TTL_MS = 24 * 60 * 60 * 1000;
 exports.default = UserRepo;

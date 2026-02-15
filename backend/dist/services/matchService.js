@@ -43,6 +43,15 @@ class MatchService {
                     location: 'Bengaluru',
                     interests: ['travel', 'fitness', 'startup', 'music'],
                     avatarKey: 'lion',
+                    lookingFor: 'woman',
+                    relationshipGoal: 'long_term',
+                    occupation: 'Product Manager',
+                    education: 'MBA',
+                    heightCm: 178,
+                    drinking: 'socially',
+                    smoking: 'never',
+                    religion: 'Hindu',
+                    languages: ['English', 'Hindi'],
                     privatePhotos: [
                         'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80'
                     ]
@@ -57,6 +66,15 @@ class MatchService {
                     location: 'Mumbai',
                     interests: ['dance', 'music', 'food', 'travel'],
                     avatarKey: 'lotus',
+                    lookingFor: 'man',
+                    relationshipGoal: 'long_term',
+                    occupation: 'Dance Instructor',
+                    education: 'B.Com',
+                    heightCm: 165,
+                    drinking: 'occasionally',
+                    smoking: 'never',
+                    religion: 'Hindu',
+                    languages: ['English', 'Hindi'],
                     privatePhotos: [
                         'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80'
                     ]
@@ -71,6 +89,15 @@ class MatchService {
                     location: 'Hyderabad',
                     interests: ['tech', 'music', 'hiking', 'gaming'],
                     avatarKey: 'falcon',
+                    lookingFor: 'woman',
+                    relationshipGoal: 'marriage',
+                    occupation: 'Software Engineer',
+                    education: 'B.Tech',
+                    heightCm: 182,
+                    drinking: 'socially',
+                    smoking: 'never',
+                    religion: 'Hindu',
+                    languages: ['English', 'Telugu', 'Hindi'],
                     privatePhotos: [
                         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80'
                     ]
@@ -89,6 +116,15 @@ class MatchService {
                     location: row.location,
                     interests: row.interests,
                     avatarKey: row.avatarKey,
+                    lookingFor: row.lookingFor,
+                    relationshipGoal: row.relationshipGoal,
+                    occupation: row.occupation,
+                    education: row.education,
+                    heightCm: row.heightCm,
+                    drinking: row.drinking,
+                    smoking: row.smoking,
+                    religion: row.religion,
+                    languages: row.languages,
                     privatePhotos: row.privatePhotos,
                     onboardingCompleted: true
                 });
@@ -117,6 +153,15 @@ class MatchService {
             location: user.location || '',
             interests: user.interests || [],
             avatarKey: user.avatarKey || DEFAULT_AVATAR_KEY,
+            lookingFor: user.lookingFor || 'prefer_not_say',
+            relationshipGoal: user.relationshipGoal || 'long_term',
+            occupation: user.occupation || '',
+            education: user.education || '',
+            heightCm: user.heightCm || 170,
+            drinking: user.drinking || 'prefer_not_say',
+            smoking: user.smoking || 'prefer_not_say',
+            religion: user.religion || '',
+            languages: user.languages || [],
             onboardingCompleted: Boolean(user.onboardingCompleted)
         };
     }
@@ -133,6 +178,15 @@ class MatchService {
                 location: '',
                 interests: [],
                 avatarKey: DEFAULT_AVATAR_KEY,
+                lookingFor: 'prefer_not_say',
+                relationshipGoal: 'long_term',
+                occupation: '',
+                education: '',
+                heightCm: 170,
+                drinking: 'prefer_not_say',
+                smoking: 'prefer_not_say',
+                religion: '',
+                languages: [],
                 privatePhotos: [],
                 onboardingCompleted: false,
                 createdAt: new Date().toISOString()
@@ -228,6 +282,15 @@ class MatchService {
                     location: '',
                     interests: [],
                     avatarKey: DEFAULT_AVATAR_KEY,
+                    lookingFor: 'prefer_not_say',
+                    relationshipGoal: 'long_term',
+                    occupation: '',
+                    education: '',
+                    heightCm: 170,
+                    drinking: 'prefer_not_say',
+                    smoking: 'prefer_not_say',
+                    religion: '',
+                    languages: [],
                     privatePhotos: [],
                     onboardingCompleted: false,
                     createdAt: new Date().toISOString()
@@ -253,8 +316,31 @@ class MatchService {
     updateUserProfile(userId, input) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.ensureReady();
-            if (!input.name || !input.location || !input.gender || !input.avatarKey) {
+            if (!input.name ||
+                !input.location ||
+                !input.gender ||
+                !input.avatarKey ||
+                !input.bio ||
+                !input.occupation ||
+                !input.education ||
+                !input.religion ||
+                !input.lookingFor ||
+                !input.relationshipGoal ||
+                !input.drinking ||
+                !input.smoking) {
                 throw new Error('Profile is incomplete');
+            }
+            if (input.age < 18 || input.age > 80) {
+                throw new Error('Age must be between 18 and 80');
+            }
+            if (input.heightCm < 120 || input.heightCm > 230) {
+                throw new Error('Height must be between 120 and 230 cm');
+            }
+            if (!input.interests || input.interests.length < 3) {
+                throw new Error('Please add at least 3 interests');
+            }
+            if (!input.languages || input.languages.length < 1) {
+                throw new Error('Please add at least 1 language');
             }
             const updated = yield this.userRepo.updateUser(userId, {
                 name: input.name.trim(),
@@ -262,8 +348,17 @@ class MatchService {
                 gender: input.gender,
                 bio: input.bio.trim(),
                 location: input.location.trim(),
-                interests: input.interests,
+                interests: input.interests.map(item => item.trim()).filter(Boolean),
                 avatarKey: input.avatarKey,
+                lookingFor: input.lookingFor,
+                relationshipGoal: input.relationshipGoal,
+                occupation: input.occupation.trim(),
+                education: input.education.trim(),
+                heightCm: input.heightCm,
+                drinking: input.drinking,
+                smoking: input.smoking,
+                religion: input.religion.trim(),
+                languages: input.languages.map(item => item.trim()).filter(Boolean),
                 privatePhotos: input.privatePhotos,
                 onboardingCompleted: true
             });
