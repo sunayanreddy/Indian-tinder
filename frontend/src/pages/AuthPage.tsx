@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   getApiErrorMessage,
   login,
@@ -19,15 +19,23 @@ const defaultRegisterState: RegisterInput = {
 };
 
 const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const getInitialMode = (): 'login' | 'register' => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode') === 'register' ? 'register' : 'login';
+  };
+
+  const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const demoTip = useMemo(() => 'Demo account: isha@example.com / password123', []);
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+
+  useEffect(() => {
+    setMode(getInitialMode());
+  }, []);
 
   useEffect(() => {
     if (!googleClientId) {
@@ -175,11 +183,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
             <p className="muted">or continue with Google</p>
             <div id="google-signin-button" />
           </div>
-        ) : (
-          <p className="muted">Set `REACT_APP_GOOGLE_CLIENT_ID` to enable Google sign-in.</p>
-        )}
-
-        <p className="muted">{demoTip}</p>
+        ) : null}
       </section>
     </main>
   );

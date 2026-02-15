@@ -75,6 +75,18 @@ const MessageModel =
   mongoose.models.MessageModel || mongoose.model<ChatMessage>('MessageModel', messageSchema);
 
 class UserRepo {
+  private static readonly CHAT_TTL_MS = 24 * 60 * 60 * 1000;
+
+  private getCutoffIso(): string {
+    return new Date(Date.now() - UserRepo.CHAT_TTL_MS).toISOString();
+  }
+
+  private async purgeExpiredMessages(): Promise<void> {
+    await MessageModel.deleteMany({
+      createdAt: { $lt: this.getCutoffIso() }
+    }).exec();
+  }
+
   public async createUser(user: User): Promise<User> {
     await UserModel.create(user);
     return user;
@@ -150,11 +162,13 @@ class UserRepo {
   }
 
   public async addMessage(message: ChatMessage): Promise<ChatMessage> {
+    await this.purgeExpiredMessages();
     await MessageModel.create(message);
     return message;
   }
 
   public async getMessagesForMatch(matchId: string): Promise<ChatMessage[]> {
+    await this.purgeExpiredMessages();
     return MessageModel.find({ matchId })
       .sort({ createdAt: 1 })
       .lean<ChatMessage[]>()
@@ -162,11 +176,13 @@ class UserRepo {
   }
 
   public async getLastMessageForMatch(matchId: string): Promise<ChatMessage | undefined> {
+    await this.purgeExpiredMessages();
     const last = await MessageModel.findOne({ matchId }).sort({ createdAt: -1 }).lean<ChatMessage>().exec();
     return last || undefined;
   }
 
   public async getMessageCountForMatch(matchId: string): Promise<number> {
+    await this.purgeExpiredMessages();
     return MessageModel.countDocuments({ matchId }).exec();
   }
 }
