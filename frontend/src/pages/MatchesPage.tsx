@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import AvatarBadge from '../components/AvatarBadge';
 import { getMatches } from '../services/api';
 import { MatchSummary } from '../types';
 
@@ -42,10 +43,11 @@ const MatchesPage: React.FC = () => {
       <div className="match-list">
         {matches.map(match => (
           <Link className="match-item" key={match.matchId} to={`/chat/${match.user.id}`}>
-            <img src={match.user.avatarUrl} alt={match.user.name} />
+            <AvatarBadge avatarKey={match.user.avatarKey} name={match.user.name} size={56} />
             <div>
               <h3>{match.user.name}</h3>
               <p>{match.lastMessage?.text || 'You are now connected. Say hi.'}</p>
+              <small className="muted">Messages: {match.messageCount}</small>
             </div>
           </Link>
         ))}

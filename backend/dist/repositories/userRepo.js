@@ -1,108 +1,177 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const DATA_FILE_PATH = path_1.default.resolve(__dirname, '../../data/store.json');
-const emptyStore = () => ({
-    users: [],
-    swipes: [],
-    matches: [],
-    messages: []
-});
+const mongoose_1 = __importDefault(require("mongoose"));
+const userSchema = new mongoose_1.default.Schema({
+    id: { type: String, required: true, unique: true },
+    googleId: { type: String },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    passwordHash: { type: String },
+    age: { type: Number, required: true },
+    gender: {
+        type: String,
+        enum: ['man', 'woman', 'non_binary', 'other', 'prefer_not_say'],
+        required: true
+    },
+    bio: { type: String, required: true },
+    location: { type: String, required: true },
+    interests: [{ type: String, required: true }],
+    avatarKey: { type: String, required: true },
+    privatePhotos: [{ type: String, required: true }],
+    onboardingCompleted: { type: Boolean, required: true, default: false },
+    createdAt: { type: String, required: true }
+}, { versionKey: false });
+const swipeSchema = new mongoose_1.default.Schema({
+    fromUserId: { type: String, required: true },
+    toUserId: { type: String, required: true },
+    action: { type: String, enum: ['like', 'pass'], required: true },
+    createdAt: { type: String, required: true }
+}, { versionKey: false });
+swipeSchema.index({ fromUserId: 1, toUserId: 1 }, { unique: true });
+const photoAccessGrantSchema = new mongoose_1.default.Schema({
+    grantedBy: { type: String, required: true },
+    grantedTo: { type: String, required: true },
+    grantedAt: { type: String, required: true }
+}, { _id: false });
+const matchSchema = new mongoose_1.default.Schema({
+    id: { type: String, required: true, unique: true },
+    userIds: [{ type: String, required: true }],
+    createdAt: { type: String, required: true },
+    photoAccessGrants: { type: [photoAccessGrantSchema], required: true, default: [] }
+}, { versionKey: false });
+const messageSchema = new mongoose_1.default.Schema({
+    id: { type: String, required: true, unique: true },
+    matchId: { type: String, required: true },
+    fromUserId: { type: String, required: true },
+    toUserId: { type: String, required: true },
+    text: { type: String, required: true },
+    createdAt: { type: String, required: true }
+}, { versionKey: false });
+const UserModel = mongoose_1.default.models.UserModel || mongoose_1.default.model('UserModel', userSchema);
+const SwipeModel = mongoose_1.default.models.SwipeModel || mongoose_1.default.model('SwipeModel', swipeSchema);
+const MatchModel = mongoose_1.default.models.MatchModel || mongoose_1.default.model('MatchModel', matchSchema);
+const MessageModel = mongoose_1.default.models.MessageModel || mongoose_1.default.model('MessageModel', messageSchema);
 class UserRepo {
-    constructor() {
-        this.store = this.readStore();
-    }
-    readStore() {
-        const dir = path_1.default.dirname(DATA_FILE_PATH);
-        if (!fs_1.default.existsSync(dir)) {
-            fs_1.default.mkdirSync(dir, { recursive: true });
-        }
-        if (!fs_1.default.existsSync(DATA_FILE_PATH)) {
-            const initial = emptyStore();
-            fs_1.default.writeFileSync(DATA_FILE_PATH, JSON.stringify(initial, null, 2), 'utf8');
-            return initial;
-        }
-        try {
-            const raw = fs_1.default.readFileSync(DATA_FILE_PATH, 'utf8');
-            const parsed = JSON.parse(raw);
-            return {
-                users: parsed.users || [],
-                swipes: parsed.swipes || [],
-                matches: parsed.matches || [],
-                messages: parsed.messages || []
-            };
-        }
-        catch (_error) {
-            const fallback = emptyStore();
-            fs_1.default.writeFileSync(DATA_FILE_PATH, JSON.stringify(fallback, null, 2), 'utf8');
-            return fallback;
-        }
-    }
-    persist() {
-        fs_1.default.writeFileSync(DATA_FILE_PATH, JSON.stringify(this.store, null, 2), 'utf8');
-    }
     createUser(user) {
-        this.store.users.push(user);
-        this.persist();
-        return user;
+        return __awaiter(this, void 0, void 0, function* () {
+            yield UserModel.create(user);
+            return user;
+        });
+    }
+    updateUser(userId, patch) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield UserModel.findOneAndUpdate({ id: userId }, patch, { new: true }).exec();
+            return this.getUserById(userId);
+        });
     }
     getAllUsers() {
-        return this.store.users;
+        return __awaiter(this, void 0, void 0, function* () {
+            return UserModel.find().lean().exec();
+        });
     }
     getUserById(id) {
-        return this.store.users.find(user => user.id === id);
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield UserModel.findOne({ id }).lean().exec();
+            return user || undefined;
+        });
     }
     getUserByEmail(email) {
-        return this.store.users.find(user => user.email.toLowerCase() === email.toLowerCase());
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield UserModel.findOne({ email: email.toLowerCase() }).lean().exec();
+            return user || undefined;
+        });
+    }
+    getUserByGoogleId(googleId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield UserModel.findOne({ googleId }).lean().exec();
+            return user || undefined;
+        });
     }
     upsertSwipe(swipe) {
-        const existingIndex = this.store.swipes.findIndex(row => row.fromUserId === swipe.fromUserId && row.toUserId === swipe.toUserId);
-        if (existingIndex === -1) {
-            this.store.swipes.push(swipe);
-        }
-        else {
-            this.store.swipes[existingIndex] = swipe;
-        }
-        this.persist();
-        return swipe;
+        return __awaiter(this, void 0, void 0, function* () {
+            yield SwipeModel.findOneAndUpdate({ fromUserId: swipe.fromUserId, toUserId: swipe.toUserId }, swipe, { upsert: true, new: true, setDefaultsOnInsert: true }).exec();
+            return swipe;
+        });
     }
     getSwipe(fromUserId, toUserId) {
-        return this.store.swipes.find(row => row.fromUserId === fromUserId && row.toUserId === toUserId);
+        return __awaiter(this, void 0, void 0, function* () {
+            const swipe = yield SwipeModel.findOne({ fromUserId, toUserId }).lean().exec();
+            return swipe || undefined;
+        });
     }
     hasUserSwiped(fromUserId, toUserId) {
-        return Boolean(this.getSwipe(fromUserId, toUserId));
+        return __awaiter(this, void 0, void 0, function* () {
+            const swipe = yield this.getSwipe(fromUserId, toUserId);
+            return Boolean(swipe);
+        });
     }
     createMatch(match) {
-        this.store.matches.push(match);
-        this.persist();
-        return match;
+        return __awaiter(this, void 0, void 0, function* () {
+            yield MatchModel.create(match);
+            return match;
+        });
+    }
+    updateMatch(matchId, patch) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield MatchModel.findOneAndUpdate({ id: matchId }, patch, { new: true }).exec();
+            return this.getMatchById(matchId);
+        });
+    }
+    getMatchById(matchId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const match = yield MatchModel.findOne({ id: matchId }).lean().exec();
+            return match || undefined;
+        });
     }
     getMatchByUsers(userA, userB) {
-        return this.store.matches.find(match => {
-            const set = new Set(match.userIds);
-            return set.has(userA) && set.has(userB);
+        return __awaiter(this, void 0, void 0, function* () {
+            const match = yield MatchModel.findOne({ userIds: { $all: [userA, userB] } })
+                .lean()
+                .exec();
+            return match || undefined;
         });
     }
     getMatchesForUser(userId) {
-        return this.store.matches.filter(match => match.userIds.includes(userId));
+        return __awaiter(this, void 0, void 0, function* () {
+            return MatchModel.find({ userIds: userId }).lean().exec();
+        });
     }
     addMessage(message) {
-        this.store.messages.push(message);
-        this.persist();
-        return message;
+        return __awaiter(this, void 0, void 0, function* () {
+            yield MessageModel.create(message);
+            return message;
+        });
     }
     getMessagesForMatch(matchId) {
-        return this.store.messages
-            .filter(message => message.matchId === matchId)
-            .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        return __awaiter(this, void 0, void 0, function* () {
+            return MessageModel.find({ matchId })
+                .sort({ createdAt: 1 })
+                .lean()
+                .exec();
+        });
     }
     getLastMessageForMatch(matchId) {
-        const matchMessages = this.getMessagesForMatch(matchId);
-        return matchMessages[matchMessages.length - 1];
+        return __awaiter(this, void 0, void 0, function* () {
+            const last = yield MessageModel.findOne({ matchId }).sort({ createdAt: -1 }).lean().exec();
+            return last || undefined;
+        });
+    }
+    getMessageCountForMatch(matchId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return MessageModel.countDocuments({ matchId }).exec();
+        });
     }
 }
 exports.default = UserRepo;

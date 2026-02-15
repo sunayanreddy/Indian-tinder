@@ -1,5 +1,6 @@
 import React from 'react';
 import { User } from '../types';
+import AvatarBadge from './AvatarBadge';
 
 interface SwipeCardProps {
   user: User;
@@ -10,13 +11,18 @@ interface SwipeCardProps {
 const SwipeCard: React.FC<SwipeCardProps> = ({ user, onLike, onPass }) => {
   return (
     <article className="profile-card">
-      <img src={user.avatarUrl} alt={user.name} className="profile-image" />
+      <div className="avatar-panel">
+        <AvatarBadge avatarKey={user.avatarKey} name={user.name} size={160} />
+        <p className="muted">Private photos stay hidden until both trust each other.</p>
+      </div>
       <div className="profile-body">
         <h2>
           {user.name}, {user.age}
         </h2>
-        <p className="profile-location">{user.location}</p>
-        <p>{user.bio}</p>
+        <p className="profile-location">
+          {user.location} · {user.gender.replace('_', ' ')}
+        </p>
+        <p>{user.bio || 'No bio yet.'}</p>
         <div className="tag-row">
           {user.interests.map(interest => (
             <span className="tag" key={interest}>

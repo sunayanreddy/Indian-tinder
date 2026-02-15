@@ -1,15 +1,21 @@
 export type SwipeAction = 'like' | 'pass';
 
+export type Gender = 'man' | 'woman' | 'non_binary' | 'other' | 'prefer_not_say';
+
 export interface User {
   id: string;
+  googleId?: string;
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
   age: number;
+  gender: Gender;
   bio: string;
   location: string;
   interests: string[];
-  avatarUrl: string;
+  avatarKey: string;
+  privatePhotos: string[];
+  onboardingCompleted: boolean;
   createdAt: string;
 }
 
@@ -17,10 +23,12 @@ export interface PublicUser {
   id: string;
   name: string;
   age: number;
+  gender: Gender;
   bio: string;
   location: string;
   interests: string[];
-  avatarUrl: string;
+  avatarKey: string;
+  onboardingCompleted: boolean;
 }
 
 export interface Swipe {
@@ -30,10 +38,17 @@ export interface Swipe {
   createdAt: string;
 }
 
+export interface PhotoAccessGrant {
+  grantedBy: string;
+  grantedTo: string;
+  grantedAt: string;
+}
+
 export interface Match {
   id: string;
   userIds: [string, string];
   createdAt: string;
+  photoAccessGrants: PhotoAccessGrant[];
 }
 
 export interface ChatMessage {
@@ -49,6 +64,10 @@ export interface MatchSummary {
   matchId: string;
   connectedAt: string;
   user: PublicUser;
+  canViewPrivatePhotos: boolean;
+  hasGrantedPhotoAccess: boolean;
+  isEligibleToGrantPhotoAccess: boolean;
+  messageCount: number;
   lastMessage?: {
     text: string;
     createdAt: string;

@@ -31,6 +31,16 @@ router.post('/auth/login', async (req: any, res: any) => {
   }
 });
 
+router.post('/auth/google', async (req: any, res: any) => {
+  try {
+    const result = await service.loginWithGoogle(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(401).json({ message });
+  }
+});
+
 router.get('/events', (req: any, res: any) => {
   try {
     const userId = extractUserIdFromRequest(req);
@@ -59,6 +69,16 @@ router.get('/users/me', async (req: any, res: any) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(404).json({ message });
+  }
+});
+
+router.put('/users/me/profile', async (req: any, res: any) => {
+  try {
+    const profile = await service.updateUserProfile(req.userId, req.body);
+    res.status(200).json(profile);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(400).json({ message });
   }
 });
 
@@ -104,6 +124,26 @@ router.get('/matches', async (req: any, res: any) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(400).json({ message });
+  }
+});
+
+router.post('/matches/:matchUserId/grant-photo-access', async (req: any, res: any) => {
+  try {
+    await service.grantPhotoAccess(req.userId, String(req.params.matchUserId));
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(400).json({ message });
+  }
+});
+
+router.get('/matches/:matchUserId/private-photos', async (req: any, res: any) => {
+  try {
+    const photos = await service.getPrivatePhotos(req.userId, String(req.params.matchUserId));
+    res.status(200).json({ photos });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(403).json({ message });
   }
 });
 

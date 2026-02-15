@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import AvatarBadge from '../components/AvatarBadge';
 import {
   createEventsSource,
   getMatches,
   getMessages,
+  getPrivatePhotos,
+  grantPhotoAccess,
   parseMatchEvent,
   parseMessageEvent,
   parseTypingEvent,
@@ -25,6 +28,8 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [privatePhotos, setPrivatePhotos] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState('');
 
   const loadChat = async (): Promise<void> => {
     setLoading(true);
@@ -37,6 +42,18 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
       }
       setTargetMatch(matchedUser);
       setMessages(chatMessages);
+
+      if (matchedUser?.canViewPrivatePhotos) {
+        try {
+          const photos = await getPrivatePhotos(matchUserId);
+          setPrivatePhotos(photos);
+          setPhotoError('');
+        } catch (err) {
+          setPhotoError(err instanceof Error ? err.message : 'Could not load private photos');
+        }
+      } else {
+        setPrivatePhotos([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load chat');
     } finally {
@@ -93,7 +110,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       void sendTyping(matchUserId, draft.trim().length > 0);
-    }, 200);
+    }, 250);
 
     return () => clearTimeout(timeoutId);
   }, [draft, matchUserId]);
@@ -107,8 +124,18 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
       await sendMessage(matchUserId, draft);
       setDraft('');
       void sendTyping(matchUserId, false);
+      void loadChat();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
+    }
+  };
+
+  const grantAccess = async (): Promise<void> => {
+    try {
+      await grantPhotoAccess(matchUserId);
+      await loadChat();
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : 'Unable to grant photo access');
     }
   };
 
@@ -126,6 +153,23 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
         </Link>
       </div>
 
+      {targetMatch && (
+        <div className="trust-panel">
+          <AvatarBadge avatarKey={targetMatch.user.avatarKey} name={targetMatch.user.name} size={64} />
+          <div>
+            <p className="muted">Trust progress: {targetMatch.messageCount}/8 messages</p>
+            {!targetMatch.canViewPrivatePhotos && (
+              <p className="muted">Private photos unlock only after enough chat and explicit permission.</p>
+            )}
+            {targetMatch.isEligibleToGrantPhotoAccess && !targetMatch.hasGrantedPhotoAccess && (
+              <button className="btn btn-ghost" onClick={() => void grantAccess()}>
+                Grant Your Photo Access
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {loading && <p>Loading conversation...</p>}
       {error && <p className="error-text">{error}</p>}
 
@@ -142,6 +186,15 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
       </div>
 
       {isTyping && <p className="typing-indicator">{targetMatch?.user.name || 'They'} is typing...</p>}
+
+      {targetMatch?.canViewPrivatePhotos && (
+        <div className="private-photo-grid">
+          {privatePhotos.map(photo => (
+            <img key={photo} src={photo} alt="Private profile" className="private-photo" />
+          ))}
+        </div>
+      )}
+      {photoError && <p className="error-text">{photoError}</p>}
 
       <div className="chat-input-row">
         <input

@@ -1,19 +1,21 @@
-import React, { useMemo, useState } from 'react';
-import { login, register, RegisterInput } from '../services/api';
+import React, { useEffect, useMemo, useState } from 'react';
+import { login, loginWithGoogle, register, RegisterInput } from '../services/api';
 import { User } from '../types';
 
 interface AuthPageProps {
   onAuthenticated: (token: string, user: User) => void;
 }
 
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
 const defaultRegisterState: RegisterInput = {
   name: '',
   email: '',
-  password: '',
-  age: 25,
-  bio: '',
-  location: '',
-  interests: []
+  password: ''
 };
 
 const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
@@ -21,17 +23,52 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [age, setAge] = useState(25);
-  const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
-  const [interests, setInterests] = useState('travel, food, music');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const demoTip = useMemo(
-    () => 'Demo account: isha@example.com / password123',
-    []
-  );
+  const demoTip = useMemo(() => 'Demo account: isha@example.com / password123', []);
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+
+  useEffect(() => {
+    if (!googleClientId) {
+      return;
+    }
+
+    const scriptId = 'google-identity-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.id = scriptId;
+      script.onload = () => {
+        if (window.google) {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response: any) => {
+              try {
+                const result = await loginWithGoogle(response.credential);
+                onAuthenticated(result.token, result.user);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Google login failed');
+              }
+            }
+          });
+          const container = document.getElementById('google-signin-button');
+          if (container) {
+            container.innerHTML = '';
+            window.google.accounts.id.renderButton(container, {
+              theme: 'outline',
+              size: 'large',
+              shape: 'pill',
+              text: 'continue_with'
+            });
+          }
+        }
+      };
+      document.body.appendChild(script);
+    }
+  }, [googleClientId, onAuthenticated]);
 
   const submitLogin = async (): Promise<void> => {
     setLoading(true);
@@ -54,14 +91,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
       ...defaultRegisterState,
       name,
       email,
-      password,
-      age,
-      bio,
-      location,
-      interests: interests
-        .split(',')
-        .map(item => item.trim())
-        .filter(Boolean)
+      password
     };
 
     try {
@@ -86,8 +116,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
   return (
     <main className="auth-layout">
       <section className="auth-panel">
-        <h1>Indian Tinder Pro</h1>
-        <p>Meet people, get matched, and start meaningful conversations.</p>
+        <h1>Trust-first Dating</h1>
+        <p>Use Gmail/Google or email login. Private photos unlock only with consent after meaningful chat.</p>
         <div className="auth-toggle">
           <button
             className={`btn ${mode === 'login' ? 'btn-like' : 'btn-ghost'}`}
@@ -107,47 +137,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {mode === 'register' && (
-            <>
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                type="text"
-                placeholder="Full name"
-                required
-              />
-              <div className="grid-two">
-                <input
-                  value={age}
-                  onChange={e => setAge(Number(e.target.value))}
-                  type="number"
-                  min={18}
-                  max={70}
-                  placeholder="Age"
-                  required
-                />
-                <input
-                  value={location}
-                  onChange={e => setLocation(e.target.value)}
-                  type="text"
-                  placeholder="City"
-                  required
-                />
-              </div>
-              <input
-                value={bio}
-                onChange={e => setBio(e.target.value)}
-                type="text"
-                placeholder="Bio"
-                required
-              />
-              <input
-                value={interests}
-                onChange={e => setInterests(e.target.value)}
-                type="text"
-                placeholder="Interests separated by commas"
-                required
-              />
-            </>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              type="text"
+              placeholder="Full name"
+              required
+            />
           )}
 
           <input
@@ -171,6 +167,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
             {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
           </button>
         </form>
+
+        {googleClientId ? (
+          <div className="google-wrap">
+            <p className="muted">or continue with Google</p>
+            <div id="google-signin-button" />
+          </div>
+        ) : (
+          <p className="muted">Set `REACT_APP_GOOGLE_CLIENT_ID` to enable Google sign-in.</p>
+        )}
 
         <p className="muted">{demoTip}</p>
       </section>

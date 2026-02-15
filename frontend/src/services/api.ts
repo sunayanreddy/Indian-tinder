@@ -2,6 +2,7 @@ import axios from 'axios';
 import {
   AuthResponse,
   ChatMessage,
+  Gender,
   MatchSummary,
   SwipeResponse,
   TypingEvent,
@@ -39,11 +40,17 @@ export interface RegisterInput {
   name: string;
   email: string;
   password: string;
+}
+
+export interface ProfileInput {
+  name: string;
   age: number;
+  gender: Gender;
   bio: string;
   location: string;
   interests: string[];
-  avatarUrl?: string;
+  avatarKey: string;
+  privatePhotos: string[];
 }
 
 export const register = async (payload: RegisterInput): Promise<AuthResponse> => {
@@ -56,8 +63,18 @@ export const login = async (email: string, password: string): Promise<AuthRespon
   return response.data;
 };
 
+export const loginWithGoogle = async (idToken: string): Promise<AuthResponse> => {
+  const response = await client.post<AuthResponse>('/auth/google', { idToken });
+  return response.data;
+};
+
 export const getProfile = async (): Promise<User> => {
   const response = await client.get<User>('/users/me');
+  return response.data;
+};
+
+export const updateProfile = async (payload: ProfileInput): Promise<User> => {
+  const response = await client.put<User>('/users/me/profile', payload);
   return response.data;
 };
 
@@ -80,6 +97,16 @@ export const swipeUser = async (
 export const getMatches = async (): Promise<MatchSummary[]> => {
   const response = await client.get<MatchSummary[]>('/matches');
   return response.data;
+};
+
+export const grantPhotoAccess = async (matchUserId: string): Promise<{ ok: boolean }> => {
+  const response = await client.post<{ ok: boolean }>(`/matches/${matchUserId}/grant-photo-access`);
+  return response.data;
+};
+
+export const getPrivatePhotos = async (matchUserId: string): Promise<string[]> => {
+  const response = await client.get<{ photos: string[] }>(`/matches/${matchUserId}/private-photos`);
+  return response.data.photos;
 };
 
 export const getMessages = async (matchUserId: string): Promise<ChatMessage[]> => {

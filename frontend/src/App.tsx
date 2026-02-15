@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage';
 import ChatPage from './pages/ChatPage';
 import DiscoverPage from './pages/DiscoverPage';
 import MatchesPage from './pages/MatchesPage';
+import OnboardingPage from './pages/OnboardingPage';
 import { getProfile, setAuthToken } from './services/api';
 import './styles/globals.css';
 import { User } from './types';
@@ -42,6 +43,7 @@ const App: React.FC = () => {
   }, [token]);
 
   const authenticated = useMemo(() => Boolean(token && user), [token, user]);
+  const needsOnboarding = Boolean(user && !user.onboardingCompleted);
 
   const setToken = (nextToken: string): void => {
     if (nextToken) {
@@ -57,6 +59,10 @@ const App: React.FC = () => {
     setUser(nextUser);
   };
 
+  const onOnboardingComplete = (updatedUser: User): void => {
+    setUser(updatedUser);
+  };
+
   const logout = (): void => {
     setToken('');
     setUser(null);
@@ -68,27 +74,63 @@ const App: React.FC = () => {
 
   return (
     <BrowserRouter>
-      {authenticated && <TopNav onLogout={logout} />}
+      {authenticated && !needsOnboarding && <TopNav onLogout={logout} />}
 
       <Switch>
         <Route path="/auth">
-          {authenticated ? <Redirect to="/discover" /> : <AuthPage onAuthenticated={onAuthenticated} />}
+          {authenticated ? (
+            <Redirect to={needsOnboarding ? '/onboarding' : '/discover'} />
+          ) : (
+            <AuthPage onAuthenticated={onAuthenticated} />
+          )}
+        </Route>
+
+        <Route path="/onboarding">
+          {authenticated && user ? (
+            <OnboardingPage user={user} onComplete={onOnboardingComplete} />
+          ) : (
+            <Redirect to="/auth" />
+          )}
         </Route>
 
         <Route path="/discover">
-          {authenticated ? <DiscoverPage /> : <Redirect to="/auth" />}
+          {authenticated ? (
+            needsOnboarding ? (
+              <Redirect to="/onboarding" />
+            ) : (
+              <DiscoverPage />
+            )
+          ) : (
+            <Redirect to="/auth" />
+          )}
         </Route>
 
         <Route path="/matches">
-          {authenticated ? <MatchesPage /> : <Redirect to="/auth" />}
+          {authenticated ? (
+            needsOnboarding ? (
+              <Redirect to="/onboarding" />
+            ) : (
+              <MatchesPage />
+            )
+          ) : (
+            <Redirect to="/auth" />
+          )}
         </Route>
 
         <Route path="/chat/:matchUserId">
-          {authenticated && user ? <ChatPage userId={user.id} /> : <Redirect to="/auth" />}
+          {authenticated && user ? (
+            needsOnboarding ? (
+              <Redirect to="/onboarding" />
+            ) : (
+              <ChatPage userId={user.id} />
+            )
+          ) : (
+            <Redirect to="/auth" />
+          )}
         </Route>
 
         <Route path="/">
-          <Redirect to={authenticated ? '/discover' : '/auth'} />
+          <Redirect to={authenticated ? (needsOnboarding ? '/onboarding' : '/discover') : '/auth'} />
         </Route>
       </Switch>
     </BrowserRouter>

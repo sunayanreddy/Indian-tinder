@@ -1,17 +1,25 @@
 import mongoose from 'mongoose';
-import { ChatMessage, Match, Swipe, User } from '../models/user';
+import { ChatMessage, Match, PhotoAccessGrant, Swipe, User } from '../models/user';
 
 const userSchema = new mongoose.Schema<User>(
   {
     id: { type: String, required: true, unique: true },
+    googleId: { type: String },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String },
     age: { type: Number, required: true },
+    gender: {
+      type: String,
+      enum: ['man', 'woman', 'non_binary', 'other', 'prefer_not_say'],
+      required: true
+    },
     bio: { type: String, required: true },
     location: { type: String, required: true },
     interests: [{ type: String, required: true }],
-    avatarUrl: { type: String, required: true },
+    avatarKey: { type: String, required: true },
+    privatePhotos: [{ type: String, required: true }],
+    onboardingCompleted: { type: Boolean, required: true, default: false },
     createdAt: { type: String, required: true }
   },
   { versionKey: false }
@@ -29,11 +37,21 @@ const swipeSchema = new mongoose.Schema<Swipe>(
 
 swipeSchema.index({ fromUserId: 1, toUserId: 1 }, { unique: true });
 
+const photoAccessGrantSchema = new mongoose.Schema<PhotoAccessGrant>(
+  {
+    grantedBy: { type: String, required: true },
+    grantedTo: { type: String, required: true },
+    grantedAt: { type: String, required: true }
+  },
+  { _id: false }
+);
+
 const matchSchema = new mongoose.Schema<Match>(
   {
     id: { type: String, required: true, unique: true },
     userIds: [{ type: String, required: true }],
-    createdAt: { type: String, required: true }
+    createdAt: { type: String, required: true },
+    photoAccessGrants: { type: [photoAccessGrantSchema], required: true, default: [] }
   },
   { versionKey: false }
 );
@@ -62,6 +80,11 @@ class UserRepo {
     return user;
   }
 
+  public async updateUser(userId: string, patch: Partial<User>): Promise<User | undefined> {
+    await UserModel.findOneAndUpdate({ id: userId }, patch, { new: true }).exec();
+    return this.getUserById(userId);
+  }
+
   public async getAllUsers(): Promise<User[]> {
     return UserModel.find().lean<User[]>().exec();
   }
@@ -73,6 +96,11 @@ class UserRepo {
 
   public async getUserByEmail(email: string): Promise<User | undefined> {
     const user = await UserModel.findOne({ email: email.toLowerCase() }).lean<User>().exec();
+    return user || undefined;
+  }
+
+  public async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const user = await UserModel.findOne({ googleId }).lean<User>().exec();
     return user || undefined;
   }
 
@@ -98,6 +126,16 @@ class UserRepo {
   public async createMatch(match: Match): Promise<Match> {
     await MatchModel.create(match);
     return match;
+  }
+
+  public async updateMatch(matchId: string, patch: Partial<Match>): Promise<Match | undefined> {
+    await MatchModel.findOneAndUpdate({ id: matchId }, patch, { new: true }).exec();
+    return this.getMatchById(matchId);
+  }
+
+  public async getMatchById(matchId: string): Promise<Match | undefined> {
+    const match = await MatchModel.findOne({ id: matchId }).lean<Match>().exec();
+    return match || undefined;
   }
 
   public async getMatchByUsers(userA: string, userB: string): Promise<Match | undefined> {
@@ -126,6 +164,10 @@ class UserRepo {
   public async getLastMessageForMatch(matchId: string): Promise<ChatMessage | undefined> {
     const last = await MessageModel.findOne({ matchId }).sort({ createdAt: -1 }).lean<ChatMessage>().exec();
     return last || undefined;
+  }
+
+  public async getMessageCountForMatch(matchId: string): Promise<number> {
+    return MessageModel.countDocuments({ matchId }).exec();
   }
 }
 

@@ -1,11 +1,15 @@
+export type Gender = 'man' | 'woman' | 'non_binary' | 'other' | 'prefer_not_say';
+
 export interface User {
   id: string;
   name: string;
   age: number;
+  gender: Gender;
   bio: string;
   location: string;
   interests: string[];
-  avatarUrl: string;
+  avatarKey: string;
+  onboardingCompleted: boolean;
 }
 
 export interface AuthResponse {
@@ -17,6 +21,10 @@ export interface MatchSummary {
   matchId: string;
   connectedAt: string;
   user: User;
+  canViewPrivatePhotos: boolean;
+  hasGrantedPhotoAccess: boolean;
+  isEligibleToGrantPhotoAccess: boolean;
+  messageCount: number;
   lastMessage?: {
     text: string;
     createdAt: string;
