@@ -36,7 +36,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
       script.defer = true;
       script.id = scriptId;
       script.onload = () => {
-        const googleApi = (window as any).google;
+        // @ts-ignore - Google Identity script injects this global
+        const googleApi = window.google;
         if (googleApi) {
           googleApi.accounts.id.initialize({
             client_id: googleClientId,
