@@ -44,7 +44,11 @@ client.interceptors.response.use(
   response => response,
   error => {
     const friendly = new Error(getErrorMessage(error, 'Request failed'));
-    (friendly as any).status = error?.response?.status;
+    Object.defineProperty(friendly, 'status', {
+      value: error && error.response ? error.response.status : 0,
+      enumerable: false,
+      configurable: true
+    });
     return Promise.reject(friendly);
   }
 );
