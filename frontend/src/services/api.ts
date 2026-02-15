@@ -14,7 +14,7 @@ let authToken = '';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000
+  timeout: 30000
 });
 
 client.interceptors.request.use(config => {
@@ -26,6 +26,28 @@ client.interceptors.request.use(config => {
   }
   return config;
 });
+
+const getErrorMessage = (error: any, fallback: string): string => {
+  const serverMessage = error?.response?.data?.message;
+  if (typeof serverMessage === 'string' && serverMessage.trim()) {
+    return serverMessage;
+  }
+
+  if (error?.message === 'Network Error') {
+    return 'Unable to reach server. Please check your connection and try again.';
+  }
+
+  return fallback;
+};
+
+client.interceptors.response.use(
+  response => response,
+  error => {
+    const friendly = new Error(getErrorMessage(error, 'Request failed'));
+    (friendly as any).status = error?.response?.status;
+    return Promise.reject(friendly);
+  }
+);
 
 export const setAuthToken = (token: string): void => {
   authToken = token;
@@ -147,4 +169,15 @@ export const parseMessageEvent = (raw: string): ChatMessage => {
 export const parseMatchEvent = (raw: string): MatchSummary => {
   const parsed: any = JSON.parse(raw);
   return parsed;
+};
+
+export const getApiErrorMessage = (error: any, fallback: string): string => {
+  if (error?.message && typeof error.message === 'string') {
+    return error.message;
+  }
+  return fallback;
+};
+
+export const getApiErrorStatus = (error: any): number => {
+  return Number(error?.status || 0);
 };

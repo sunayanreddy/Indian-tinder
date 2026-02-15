@@ -6,7 +6,7 @@ import ChatPage from './pages/ChatPage';
 import DiscoverPage from './pages/DiscoverPage';
 import MatchesPage from './pages/MatchesPage';
 import OnboardingPage from './pages/OnboardingPage';
-import { getProfile, setAuthToken } from './services/api';
+import { getApiErrorStatus, getProfile, setAuthToken } from './services/api';
 import './styles/globals.css';
 import { User } from './types';
 
@@ -14,6 +14,8 @@ const App: React.FC = () => {
   const [token, setTokenState] = useState<string>(() => localStorage.getItem('dating_token') || '');
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(Boolean(token));
+  const [profileLoadError, setProfileLoadError] = useState('');
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     setAuthToken(token || '');
@@ -21,6 +23,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const restoreUser = async (): Promise<void> => {
+      setProfileLoadError('');
       if (!token) {
         setUser(null);
         setLoadingUser(false);
@@ -28,19 +31,37 @@ const App: React.FC = () => {
       }
 
       try {
-        const profile = await getProfile();
+        let profile: User | null = null;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            profile = await getProfile();
+            break;
+          } catch (error) {
+            const status = getApiErrorStatus(error);
+            if (status === 401 || status === 403) {
+              localStorage.removeItem('dating_token');
+              setTokenState('');
+              setUser(null);
+              setProfileLoadError('');
+              return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+          }
+        }
+
+        if (!profile) {
+          setProfileLoadError('Unable to load your session right now. Please retry.');
+          return;
+        }
+
         setUser(profile);
-      } catch (_err) {
-        localStorage.removeItem('dating_token');
-        setTokenState('');
-        setUser(null);
       } finally {
         setLoadingUser(false);
       }
     };
 
     void restoreUser();
-  }, [token]);
+  }, [token, reloadTick]);
 
   const authenticated = useMemo(() => Boolean(token && user), [token, user]);
   const needsOnboarding = Boolean(user && !user.onboardingCompleted);
@@ -72,6 +93,22 @@ const App: React.FC = () => {
     return <div className="loading-shell">Loading your profile...</div>;
   }
 
+  if (profileLoadError && token) {
+    return (
+      <div className="loading-shell">
+        <div>
+          <p>{profileLoadError}</p>
+          <button className="btn btn-like" onClick={() => {
+            setLoadingUser(true);
+            setReloadTick(prev => prev + 1);
+          }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       {authenticated && !needsOnboarding && <TopNav onLogout={logout} />}
@@ -87,10 +124,14 @@ const App: React.FC = () => {
 
         <Route path="/onboarding">
           {authenticated && user ? (
-            <OnboardingPage user={user} onComplete={onOnboardingComplete} />
+            needsOnboarding ? (
+              <OnboardingPage user={user} onComplete={onOnboardingComplete} />
+            ) : (
+              <Redirect to="/discover" />
+            )
           ) : (
             <Redirect to="/auth" />
-          )}
+          )} 
         </Route>
 
         <Route path="/discover">

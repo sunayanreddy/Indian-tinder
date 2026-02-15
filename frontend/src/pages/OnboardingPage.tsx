@@ -30,7 +30,6 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ user, onComplete }) => 
   const [location, setLocation] = useState(user.location || '');
   const [interests, setInterests] = useState((user.interests || []).join(', '));
   const [avatarKey, setAvatarKey] = useState(user.avatarKey || 'fox');
-  const [privatePhotosRaw, setPrivatePhotosRaw] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -51,10 +50,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ user, onComplete }) => 
           .map(item => item.trim())
           .filter(Boolean),
         avatarKey,
-        privatePhotos: privatePhotosRaw
-          .split('\n')
-          .map(item => item.trim())
-          .filter(Boolean)
+        privatePhotos: []
       });
       onComplete(updated);
     } catch (err) {
@@ -107,12 +103,6 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ user, onComplete }) => 
             <option value="tiger">Tiger</option>
             <option value="peacock">Peacock</option>
           </select>
-          <textarea
-            value={privatePhotosRaw}
-            onChange={e => setPrivatePhotosRaw(e.target.value)}
-            placeholder="Private photo URLs (one per line)"
-            rows={4}
-          />
 
           {error && <p className="error-text">{error}</p>}
           <button className="btn btn-like" type="submit" disabled={loading}>

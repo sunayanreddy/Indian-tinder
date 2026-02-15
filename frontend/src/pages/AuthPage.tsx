@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { login, loginWithGoogle, register, RegisterInput } from '../services/api';
+import {
+  getApiErrorMessage,
+  login,
+  loginWithGoogle,
+  register,
+  RegisterInput
+} from '../services/api';
 import { User } from '../types';
 
 interface AuthPageProps {
@@ -46,7 +52,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
                 const result = await loginWithGoogle(response.credential);
                 onAuthenticated(result.token, result.user);
               } catch (err) {
-                setError(err instanceof Error ? err.message : 'Google login failed');
+                setError(getApiErrorMessage(err, 'Google login failed'));
               }
             }
           });
@@ -73,7 +79,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
       const result = await login(email, password);
       onAuthenticated(result.token, result.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(getApiErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +100,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthenticated }) => {
       const result = await register(payload);
       onAuthenticated(result.token, result.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(getApiErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
