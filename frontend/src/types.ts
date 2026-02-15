@@ -12,6 +12,19 @@ export interface User {
   onboardingCompleted: boolean;
 }
 
+export interface MyProfileDetails {
+  user: User;
+  email: string;
+  privatePhotos: string[];
+}
+
+export interface ViewerProfileDetails {
+  user: User;
+  isSelf: boolean;
+  canViewPrivatePhotos: boolean;
+  privatePhotos: string[];
+}
+
 export interface AuthResponse {
   token: string;
   user: User;

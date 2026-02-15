@@ -6,7 +6,9 @@ import ChatPage from './pages/ChatPage';
 import DiscoverPage from './pages/DiscoverPage';
 import HomePage from './pages/HomePage';
 import MatchesPage from './pages/MatchesPage';
+import MyProfilePage from './pages/MyProfilePage';
 import OnboardingPage from './pages/OnboardingPage';
+import UserProfilePage from './pages/UserProfilePage';
 import { getApiErrorStatus, getProfile, setAuthToken } from './services/api';
 import './styles/globals.css';
 import { User } from './types';
@@ -157,6 +159,30 @@ const App: React.FC = () => {
               <Redirect to="/onboarding" />
             ) : (
               <MatchesPage />
+            )
+          ) : (
+            <Redirect to="/auth" />
+          )}
+        </Route>
+
+        <Route path="/profile" exact>
+          {authenticated && user ? (
+            needsOnboarding ? (
+              <Redirect to="/onboarding" />
+            ) : (
+              <MyProfilePage onUserUpdated={onOnboardingComplete} />
+            )
+          ) : (
+            <Redirect to="/auth" />
+          )}
+        </Route>
+
+        <Route path="/profile/:userId">
+          {authenticated ? (
+            needsOnboarding ? (
+              <Redirect to="/onboarding" />
+            ) : (
+              <UserProfilePage />
             )
           ) : (
             <Redirect to="/auth" />

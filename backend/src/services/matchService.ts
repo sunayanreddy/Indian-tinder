@@ -41,6 +41,19 @@ interface ProfileInput {
   privatePhotos: string[];
 }
 
+interface MyProfileDetails {
+  user: PublicUser;
+  email: string;
+  privatePhotos: string[];
+}
+
+interface ViewerProfileDetails {
+  user: PublicUser;
+  isSelf: boolean;
+  canViewPrivatePhotos: boolean;
+  privatePhotos: string[];
+}
+
 interface SwipeInput {
   userId: string;
   targetUserId: string;
@@ -331,6 +344,58 @@ class MatchService {
     }
 
     return this.sanitizeUser(user);
+  }
+
+  public async getMyProfileDetails(userId: string): Promise<MyProfileDetails> {
+    await this.ensureReady();
+
+    const user = await this.userRepo.getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      user: this.sanitizeUser(user),
+      email: user.email,
+      privatePhotos: user.privatePhotos || []
+    };
+  }
+
+  public async getProfileForViewer(viewerId: string, targetUserId: string): Promise<ViewerProfileDetails> {
+    await this.ensureReady();
+
+    const target = await this.userRepo.getUserById(targetUserId);
+    if (!target) {
+      throw new Error('User not found');
+    }
+
+    if (viewerId === targetUserId) {
+      return {
+        user: this.sanitizeUser(target),
+        isSelf: true,
+        canViewPrivatePhotos: true,
+        privatePhotos: target.privatePhotos || []
+      };
+    }
+
+    let canViewPrivatePhotos = false;
+    try {
+      const photos = await this.getPrivatePhotos(viewerId, targetUserId);
+      canViewPrivatePhotos = photos.length >= 0;
+      return {
+        user: this.sanitizeUser(target),
+        isSelf: false,
+        canViewPrivatePhotos,
+        privatePhotos: photos
+      };
+    } catch (_error) {
+      return {
+        user: this.sanitizeUser(target),
+        isSelf: false,
+        canViewPrivatePhotos: false,
+        privatePhotos: []
+      };
+    }
   }
 
   public async updateUserProfile(userId: string, input: ProfileInput): Promise<PublicUser> {

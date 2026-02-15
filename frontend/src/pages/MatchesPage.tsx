@@ -42,14 +42,22 @@ const MatchesPage: React.FC = () => {
 
       <div className="match-list">
         {matches.map(match => (
-          <Link className="match-item" key={match.matchId} to={`/chat/${match.user.id}`}>
+          <div className="match-item" key={match.matchId}>
             <AvatarBadge avatarKey={match.user.avatarKey} name={match.user.name} size={56} />
             <div>
               <h3>{match.user.name}</h3>
               <p>{match.lastMessage?.text || 'You are now connected. Say hi.'}</p>
               <small className="muted">Messages: {match.messageCount}</small>
+              <div className="match-actions">
+                <Link className="btn btn-ghost" to={`/profile/${match.user.id}`}>
+                  View Profile
+                </Link>
+                <Link className="btn btn-like" to={`/chat/${match.user.id}`}>
+                  Open Chat
+                </Link>
+              </div>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

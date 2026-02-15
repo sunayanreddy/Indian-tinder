@@ -148,9 +148,14 @@ const ChatPage: React.FC<ChatPageProps> = ({ userId }) => {
     <div className="page-shell chat-shell">
       <div className="page-head">
         <h1>{targetMatch ? `Chat with ${targetMatch.user.name}` : 'Chat'}</h1>
-        <Link className="btn btn-ghost" to="/matches">
-          Back
-        </Link>
+        <div className="match-actions">
+          <Link className="btn btn-ghost" to={`/profile/${matchUserId}`}>
+            View Profile
+          </Link>
+          <Link className="btn btn-ghost" to="/matches">
+            Back
+          </Link>
+        </div>
       </div>
 
       {targetMatch && (

@@ -72,6 +72,16 @@ router.get('/users/me', async (req: any, res: any) => {
   }
 });
 
+router.get('/users/me/details', async (req: any, res: any) => {
+  try {
+    const details = await service.getMyProfileDetails(req.userId);
+    res.status(200).json(details);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(404).json({ message });
+  }
+});
+
 router.put('/users/me/profile', async (req: any, res: any) => {
   try {
     const profile = await service.updateUserProfile(req.userId, req.body);
@@ -89,6 +99,16 @@ router.get('/users/discover', async (req: any, res: any) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(400).json({ message });
+  }
+});
+
+router.get('/users/:targetUserId', async (req: any, res: any) => {
+  try {
+    const details = await service.getProfileForViewer(req.userId, String(req.params.targetUserId));
+    res.status(200).json(details);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(404).json({ message });
   }
 });
 
